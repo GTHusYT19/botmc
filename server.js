@@ -115,11 +115,23 @@ function startBot() {
     } catch (e) {}
   });
 
-  // Messages système du serveur (plugins, annonces, etc.)
+  // Messages système + détection format privé [[EXPÉDITEUR]] DESTINATAIRE message
   bot.on('message', (jsonMsg) => {
     try {
       const text = jsonMsg.toString().trim();
       if (!text) return;
+
+      // Format msg privé du serveur : [[PIX0O]] GuerrierSayan bonjour
+      const pmMatch = text.match(/^\[\[([^\]]+)\]\]\s+(\S+)\s+(.+)$/);
+      if (pmMatch) {
+        const sender    = pmMatch[1];
+        const recipient = pmMatch[2];
+        const content   = pmMatch[3];
+        addChat(`${sender} → ${recipient}`, content, 'whisper');
+        addStatus(`MP : [${sender} → ${recipient}] ${content}`);
+        return;
+      }
+
       // Évite les doublons avec les events chat et whisper
       const last = chatLogs[0];
       if (last && last.message === text) return;
