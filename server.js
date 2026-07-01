@@ -232,6 +232,19 @@ app.post('/api/config', (req, res) => {
   res.json({ success: true, config });
 });
 
+app.post('/api/chat', (req, res) => {
+  const { message } = req.body;
+  if (!message || !message.trim()) return res.json({ success: false, error: 'Message vide' });
+  if (!bot) return res.json({ success: false, error: 'Bot non connecté' });
+  try {
+    bot.chat(message.trim());
+    addStatus(`[Panel] Envoyé : ${message.trim()}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
 app.listen(5000, '0.0.0.0', () => {
   console.log('[Panel] Serveur démarré sur le port 5000');
   startBot();

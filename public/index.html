@@ -87,6 +87,15 @@
   .chat-msg.system { opacity: 0.7; }
   .badge-system { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #5865f222; color: #8890d4; border: 1px solid #5865f244; font-weight: 600; }
 
+  /* Barre d'envoi */
+  .chat-input-bar { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #1a1a2e; background: #0e0e1f; }
+  .chat-input-bar input { flex: 1; background: #1a1a2e; border: 1px solid #2e2e4e; border-radius: 8px; color: #dcddde; font-size: 13px; padding: 8px 12px; outline: none; }
+  .chat-input-bar input:focus { border-color: #5865f2; }
+  .chat-input-bar input::placeholder { color: #4a4a6a; }
+  .send-btn { background: #5865f2; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+  .send-btn:hover { background: #4752c4; }
+  .send-btn:disabled { background: #2e2e4e; color: #4a4a6a; cursor: not-allowed; }
+
   /* Logs */
   .log-list { padding: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
   .log-list::-webkit-scrollbar { width: 4px; }
@@ -178,6 +187,10 @@
     <div class="chat-list" id="chat-list">
       <div class="chat-empty">En attente de connexion au serveur...</div>
     </div>
+    <div class="chat-input-bar">
+      <input type="text" id="chat-input" placeholder="Écrire un message ou /commande..." maxlength="256" onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="send-btn" id="send-btn" onclick="sendChat()">Envoyer</button>
+    </div>
   </div>
 
   <!-- Logs tab -->
@@ -248,6 +261,33 @@
   async function toggleBot() {
     await fetch('/api/toggle', { method: 'POST' });
     await refresh();
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const btn   = document.getElementById('send-btn');
+    const msg   = input.value.trim();
+    if (!msg) return;
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await r.json();
+      if (data.success) {
+        input.value = '';
+      } else {
+        alert('Erreur : ' + (data.error || 'inconnue'));
+      }
+    } catch (e) {
+      alert('Erreur réseau');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Envoyer';
+    input.focus();
   }
 
   function markChanged(el, field) {
