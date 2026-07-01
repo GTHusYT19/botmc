@@ -5,6 +5,26 @@ expertMode = true
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "AFK Bot Minecraft"
+
+[[workflows.workflow]]
+name = "AFK Bot Minecraft"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 23636
 externalPort = 80

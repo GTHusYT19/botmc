@@ -38,21 +38,37 @@ function startBot() {
     username: config.username,
     version: config.version,
     auth: 'offline',
+    checkTimeoutInterval: 30000,
   });
 
   bot.on('spawn', () => {
     console.log('Bot connecté et prêt !');
 
     setTimeout(() => {
-      bot.chat('/login Yasir2009##');
+      try {
+        bot.chat('/login Yasir2009##');
+      } catch (e) {
+        console.error('[AFK Bot] Erreur /login :', e.message);
+      }
     }, 2000);
 
     keepAlive();
   });
 
   bot.on('chat', (username, message) => {
-    console.log(`[Chat] <${username}> ${message}`);
-    // Bot AFK — ne répond pas aux messages
+    try {
+      console.log(`[Chat] <${username}> ${message}`);
+    } catch (e) {
+      // Ignore les erreurs de parsing de message
+    }
+  });
+
+  bot.on('message', (jsonMsg) => {
+    try {
+      console.log(`[Message] ${jsonMsg.toString()}`);
+    } catch (e) {
+      // Ignore les formats de message non reconnus
+    }
   });
 
   bot.on('kicked', (reason) => {
@@ -81,18 +97,40 @@ function startBot() {
 function keepAlive() {
   setInterval(() => {
     if (!bot) return;
-    bot.setControlState('jump', true);
-    setTimeout(() => bot && bot.setControlState('jump', false), 200);
+    try {
+      bot.setControlState('jump', true);
+      setTimeout(() => bot && bot.setControlState('jump', false), 200);
+    } catch (e) {
+      // Ignore
+    }
   }, 30000);
 }
 
 function stopBot() {
   if (bot) {
-    bot.quit();
+    try { bot.quit(); } catch (e) {}
     bot = null;
     console.log('[AFK Bot] Bot arrêté.');
   }
 }
+
+// Empêche le crash sur les erreurs non gérées — relance le bot à la place
+process.on('uncaughtException', (err) => {
+  console.error('[AFK Bot] Erreur non gérée :', err.message);
+  if (bot) {
+    try { bot.quit(); } catch (e) {}
+    bot = null;
+  }
+  config = loadConfig();
+  if (config.botEnabled) {
+    console.log('[AFK Bot] Reconnexion dans 5s...');
+    setTimeout(startBot, 5000);
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[AFK Bot] Promesse rejetée :', reason);
+});
 
 startBot();
 
