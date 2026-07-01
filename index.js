@@ -46,7 +46,7 @@ function startBot() {
 
     setTimeout(() => {
       try {
-        bot.chat('/login Yasir2009##');
+        bot.chat('/login YourPassword');
       } catch (e) {
         console.error('[AFK Bot] Erreur /login :', e.message);
       }
