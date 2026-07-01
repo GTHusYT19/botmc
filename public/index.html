@@ -80,6 +80,13 @@
   .chat-text { font-size: 12px; color: #dcddde; margin-top: 2px; }
   .chat-empty { text-align: center; color: #4a4a6a; font-size: 12px; padding: 30px; font-style: italic; }
 
+  /* Whisper (message privé) */
+  .chat-msg.whisper { background: #2a1a3a; border-radius: 8px; padding: 4px 6px; border-left: 3px solid #b04bff; }
+  .badge-whisper { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #b04bff22; color: #b04bff; border: 1px solid #b04bff44; font-weight: 700; }
+  /* Message système */
+  .chat-msg.system { opacity: 0.7; }
+  .badge-system { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #5865f222; color: #8890d4; border: 1px solid #5865f244; font-weight: 600; }
+
   /* Logs */
   .log-list { padding: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
   .log-list::-webkit-scrollbar { width: 4px; }
@@ -326,18 +333,28 @@
     if (chatLogs.length === 0) {
       chatList.innerHTML = '<div class="chat-empty">En attente de messages...</div>';
     } else {
-      chatList.innerHTML = chatLogs.map(m => `
-        <div class="chat-msg">
-          <div class="chat-avatar" style="background:${userColor(m.username)}">${initial(m.username)}</div>
-          <div class="chat-body">
-            <div class="chat-meta">
-              <span class="chat-user" style="color:${userColor(m.username)}">${m.username}</span>
-              <span class="chat-time">${m.time}</span>
+      chatList.innerHTML = chatLogs.map(m => {
+        const isWhisper = m.type === 'whisper';
+        const isSystem  = m.type === 'system';
+        const badge = isWhisper
+          ? '<span class="badge-whisper">📨 MSG PRIVÉ</span>'
+          : isSystem ? '<span class="badge-system">Serveur</span>' : '';
+        const avatarIcon = isWhisper ? '📨' : initial(m.username);
+        const avatarBg   = isWhisper ? '#b04bff' : isSystem ? '#5865f2' : userColor(m.username);
+        const nameColor  = isWhisper ? '#b04bff' : isSystem ? '#8890d4' : userColor(m.username);
+        return `
+          <div class="chat-msg ${m.type || ''}">
+            <div class="chat-avatar" style="background:${avatarBg}">${avatarIcon}</div>
+            <div class="chat-body">
+              <div class="chat-meta">
+                <span class="chat-user" style="color:${nameColor}">${m.username}</span>
+                ${badge}
+                <span class="chat-time">${m.time}</span>
+              </div>
+              <div class="chat-text">${m.message}</div>
             </div>
-            <div class="chat-text">${m.message}</div>
-          </div>
-        </div>
-      `).join('');
+          </div>`;
+      }).join('');
     }
 
     // Logs

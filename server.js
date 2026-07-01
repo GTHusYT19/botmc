@@ -33,8 +33,8 @@ function addStatus(msg) {
   console.log(`[AFK Bot] ${msg}`);
 }
 
-function addChat(username, message) {
-  chatLogs.unshift({ time: new Date().toLocaleTimeString('fr-FR'), username, message });
+function addChat(username, message, type = 'chat') {
+  chatLogs.unshift({ time: new Date().toLocaleTimeString('fr-FR'), username, message, type });
   if (chatLogs.length > 100) chatLogs.pop();
 }
 
@@ -97,14 +97,28 @@ function startBot() {
     keepAlive();
   });
 
+  // Chat public
   bot.on('chat', (username, message) => {
-    try { addChat(username, message); } catch (e) {}
+    try { addChat(username, message, 'chat'); } catch (e) {}
   });
 
+  // Messages privés — /msg et /r
+  bot.on('whisper', (username, message) => {
+    try {
+      addChat(username, message, 'whisper');
+      addStatus(`Whisper de ${username} : ${message}`);
+    } catch (e) {}
+  });
+
+  // Messages système du serveur (plugins, annonces, etc.)
   bot.on('message', (jsonMsg) => {
     try {
-      const text = jsonMsg.toString();
-      if (text) addChat('Serveur', text);
+      const text = jsonMsg.toString().trim();
+      if (!text) return;
+      // Évite les doublons avec les events chat et whisper
+      const last = chatLogs[0];
+      if (last && last.message === text) return;
+      addChat('Serveur', text, 'system');
     } catch (e) {}
   });
 
