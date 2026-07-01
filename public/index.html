@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Minecraft AFK Bot</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0f0; min-height: 100vh; }
+
+  .app { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .header p { color: #6b6b8a; font-size: 13px; margin-top: 4px; }
+
+  /* Status card */
+  .status-card {
+    border-radius: 16px; padding: 16px; border: 1px solid #2e2e4e;
+    background: linear-gradient(135deg, #1a1a2e, #12121e);
+    transition: all 0.3s; margin-bottom: 14px;
+  }
+  .status-card.online { background: linear-gradient(135deg,#1a2a1a,#141e14); border-color: #3ba55c55; box-shadow: 0 0 20px #3ba55c20; }
+
+  .status-row { display: flex; align-items: center; justify-content: space-between; }
+  .bot-info { display: flex; align-items: center; gap: 12px; }
+  .bot-icon {
+    width: 44px; height: 44px; border-radius: 12px; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #5865f2; background: #5865f220; transition: all 0.3s;
+  }
+  .bot-icon.online { border-color: #3ba55c; background: #3ba55c20; box-shadow: 0 0 10px #3ba55c50; }
+  .bot-name { font-weight: 600; font-size: 15px; }
+  .bot-sub { font-size: 12px; color: #ed4245; display: flex; align-items: center; gap: 5px; margin-top: 3px; transition: color 0.3s; }
+  .bot-sub.online { color: #3ba55c; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #ed4245; box-shadow: 0 0 5px #ed4245; transition: all 0.3s; }
+  .dot.online { background: #3ba55c; box-shadow: 0 0 5px #3ba55c; }
+
+  /* Toggle */
+  .toggle { width: 52px; height: 28px; border-radius: 14px; background: #2e2e4e; border: none; cursor: pointer; position: relative; transition: all 0.3s; flex-shrink: 0; }
+  .toggle.on { background: linear-gradient(90deg,#3ba55c,#57f287); box-shadow: 0 0 12px #3ba55c70; }
+  .toggle-knob { position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left 0.3s; box-shadow: 0 1px 4px #0004; }
+  .toggle.on .toggle-knob { left: calc(100% - 26px); }
+
+  .status-banner {
+    margin-top: 12px; padding: 8px 12px; border-radius: 10px; font-size: 12px;
+    background: #ed424512; color: #ed9090; display: flex; align-items: center; gap: 6px;
+    transition: all 0.3s;
+  }
+  .status-banner.online { background: #3ba55c12; color: #5dcc7b; }
+
+  /* Stats row */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat-box { background: #16162a; border: 1px solid #2e2e4e; border-radius: 12px; padding: 12px; text-align: center; }
+  .stat-val { font-size: 20px; font-weight: 700; color: #5865f2; }
+  .stat-val.green { color: #3ba55c; }
+  .stat-val.red { color: #ed4245; }
+  .stat-lbl { font-size: 11px; color: #6b6b8a; margin-top: 3px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; background: #12121e; border: 1px solid #2e2e4e; border-radius: 12px; padding: 4px; }
+  .tab { flex: 1; padding: 7px; border: none; background: transparent; color: #6b6b8a; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+  .tab.active { background: #5865f2; color: #fff; }
+
+  /* Panel */
+  .panel { background: #16162a; border: 1px solid #2e2e4e; border-radius: 16px; overflow: hidden; }
+  .panel-header { background: #0f0f1e; padding: 10px 16px; font-size: 12px; color: #6b6b8a; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2e2e4e; }
+
+  /* Chat */
+  .chat-list { padding: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .chat-list::-webkit-scrollbar { width: 4px; }
+  .chat-list::-webkit-scrollbar-track { background: transparent; }
+  .chat-list::-webkit-scrollbar-thumb { background: #2e2e4e; border-radius: 4px; }
+  .chat-msg { display: flex; gap: 8px; }
+  .chat-avatar { width: 30px; height: 30px; border-radius: 50%; background: #5865f2; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .chat-body { flex: 1; }
+  .chat-meta { display: flex; align-items: center; gap: 6px; }
+  .chat-user { font-size: 12px; font-weight: 600; }
+  .chat-time { font-size: 10px; color: #4a4a6a; }
+  .chat-text { font-size: 12px; color: #dcddde; margin-top: 2px; }
+  .chat-empty { text-align: center; color: #4a4a6a; font-size: 12px; padding: 30px; font-style: italic; }
+
+  /* Logs */
+  .log-list { padding: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-thumb { background: #2e2e4e; border-radius: 4px; }
+  .log-entry { font-size: 11px; font-family: 'Consolas', monospace; display: flex; gap: 8px; }
+  .log-time { color: #4a4a6a; flex-shrink: 0; }
+  .log-text { color: #a0a0d0; }
+
+  /* Config */
+  .config-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .field label { font-size: 11px; color: #a0a0c0; font-weight: 600; display: block; margin-bottom: 4px; }
+  .field input {
+    width: 100%; background: #0f0f1e; border: 1px solid #2e2e4e; border-radius: 8px;
+    padding: 8px 12px; color: #fff; font-size: 13px; outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: #5865f2; }
+  .field input.changed { border-color: #f0a500; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .save-btn {
+    padding: 10px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; background: linear-gradient(90deg,#5865f2,#7289da); color: #fff;
+    box-shadow: 0 0 14px #5865f240; transition: opacity 0.2s;
+  }
+  .save-btn:disabled { background: #2e2e4e; color: #4a4a6a; box-shadow: none; cursor: default; }
+
+  .indicator { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+  .indicator.green { background: #3ba55c; box-shadow: 0 0 5px #3ba55c; }
+  .indicator.red { background: #ed4245; box-shadow: 0 0 5px #ed4245; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>⛏️ Minecraft AFK Bot</h1>
+    <p id="sub-title">Panel de contrôle</p>
+  </div>
+
+  <!-- Status card -->
+  <div class="status-card" id="status-card">
+    <div class="status-row">
+      <div class="bot-info">
+        <div class="bot-icon" id="bot-icon">🤖</div>
+        <div>
+          <div class="bot-name" id="bot-name">—</div>
+          <div class="bot-sub" id="bot-sub">
+            <span class="dot" id="dot"></span>
+            <span id="sub-text">Hors ligne</span>
+          </div>
+        </div>
+      </div>
+      <button class="toggle" id="toggle-btn" onclick="toggleBot()">
+        <span class="toggle-knob" id="knob"></span>
+      </button>
+    </div>
+    <div class="status-banner" id="status-banner">
+      💤 <span id="banner-text">Bot inactif — le compte n'est pas connecté au serveur.</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-val" id="stat-uptime">—</div>
+      <div class="stat-lbl">Temps connecté</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-msgs">0</div>
+      <div class="stat-lbl">Messages reçus</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-status">—</div>
+      <div class="stat-lbl">Statut</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-chat" onclick="setTab('chat')">💬 Chat</button>
+    <button class="tab" id="tab-logs" onclick="setTab('logs')">📋 Logs</button>
+    <button class="tab" id="tab-config" onclick="setTab('config')">⚙️ Config</button>
+  </div>
+
+  <!-- Chat tab -->
+  <div class="panel" id="panel-chat">
+    <div class="panel-header">
+      <span>🌍 Messages du serveur</span>
+      <span><span class="indicator" id="chat-indicator"></span><span id="chat-status-text">hors ligne</span></span>
+    </div>
+    <div class="chat-list" id="chat-list">
+      <div class="chat-empty">En attente de connexion au serveur...</div>
+    </div>
+  </div>
+
+  <!-- Logs tab -->
+  <div class="panel" id="panel-logs" style="display:none">
+    <div class="panel-header">📋 Journal du bot</div>
+    <div class="log-list" id="log-list">
+      <div class="chat-empty">Aucun log pour l'instant...</div>
+    </div>
+  </div>
+
+  <!-- Config tab -->
+  <div class="panel" id="panel-config" style="display:none">
+    <div class="panel-header">⚙️ Configuration — écrit dans config.json</div>
+    <div class="config-body">
+      <div class="field">
+        <label>🌐 Adresse IP / Domaine</label>
+        <input type="text" id="cfg-host" oninput="markChanged(this,'host')" placeholder="play.example.com" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>🔌 Port</label>
+          <input type="text" id="cfg-port" oninput="markChanged(this,'port')" placeholder="25565" />
+        </div>
+        <div class="field">
+          <label>🎮 Version</label>
+          <input type="text" id="cfg-version" oninput="markChanged(this,'version')" placeholder="1.20.1" />
+        </div>
+      </div>
+      <div class="field">
+        <label>👤 Nom du bot</label>
+        <input type="text" id="cfg-username" oninput="markChanged(this,'username')" placeholder="MonBot" />
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveConfig()" disabled>✅ Sauvegardé</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentTab = 'chat';
+  let lastConfig = {};
+  let changed = {};
+  let totalMsgs = 0;
+
+  const colors = ['#5865F2','#57F287','#FEE75C','#EB459E','#ED4245','#3BA55C','#5865F2','#F47FFF'];
+  const colorCache = {};
+  function userColor(u) {
+    if (!colorCache[u]) colorCache[u] = colors[Object.keys(colorCache).length % colors.length];
+    return colorCache[u];
+  }
+  function initial(u) { return (u || '?').charAt(0).toUpperCase(); }
+
+  function formatUptime(s) {
+    if (!s) return '—';
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  }
+
+  function setTab(t) {
+    currentTab = t;
+    ['chat','logs','config'].forEach(x => {
+      document.getElementById(`tab-${x}`).classList.toggle('active', x === t);
+      document.getElementById(`panel-${x}`).style.display = x === t ? '' : 'none';
+    });
+  }
+
+  async function toggleBot() {
+    await fetch('/api/toggle', { method: 'POST' });
+    await refresh();
+  }
+
+  function markChanged(el, field) {
+    const orig = lastConfig[field] !== undefined ? String(lastConfig[field]) : '';
+    el.classList.toggle('changed', el.value !== orig);
+    changed[field] = el.value;
+    const hasChanges = ['host','port','version','username'].some(f => {
+      const el2 = document.getElementById(`cfg-${f}`);
+      return el2 && el2.classList.contains('changed');
+    });
+    const btn = document.getElementById('save-btn');
+    btn.disabled = !hasChanges;
+    btn.textContent = hasChanges ? '💾 Sauvegarder' : '✅ Sauvegardé';
+  }
+
+  async function saveConfig() {
+    const body = {
+      host: document.getElementById('cfg-host').value,
+      port: document.getElementById('cfg-port').value,
+      username: document.getElementById('cfg-username').value,
+      version: document.getElementById('cfg-version').value,
+    };
+    await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    ['host','port','username','version'].forEach(f => {
+      const el = document.getElementById(`cfg-${f}`);
+      if (el) el.classList.remove('changed');
+    });
+    document.getElementById('save-btn').disabled = true;
+    document.getElementById('save-btn').textContent = '✅ Sauvegardé';
+    changed = {};
+    await refresh();
+  }
+
+  async function refresh() {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    const { connected, config, uptime, statusLog, chatLogs } = data;
+
+    // Header
+    document.getElementById('sub-title').textContent = `${config.host}:${config.port}`;
+    document.getElementById('bot-name').textContent = config.username;
+
+    // Status card
+    const card = document.getElementById('status-card');
+    const icon = document.getElementById('bot-icon');
+    const dot = document.getElementById('dot');
+    const sub = document.getElementById('bot-sub');
+    const btn = document.getElementById('toggle-btn');
+    const banner = document.getElementById('status-banner');
+    const bannerText = document.getElementById('banner-text');
+    const subText = document.getElementById('sub-text');
+
+    if (connected) {
+      card.classList.add('online'); icon.classList.add('online');
+      dot.classList.add('online'); sub.classList.add('online');
+      btn.classList.add('on'); banner.classList.add('online');
+      subText.textContent = `Connecté à ${config.host}`;
+      bannerText.textContent = '✅ Bot actif — connecté au serveur, ne répond à personne.';
+    } else {
+      card.classList.remove('online'); icon.classList.remove('online');
+      dot.classList.remove('online'); sub.classList.remove('online');
+      btn.classList.remove('on'); banner.classList.remove('online');
+      subText.textContent = config.botEnabled ? 'Connexion en cours...' : 'Hors ligne';
+      bannerText.textContent = config.botEnabled ? '⏳ Connexion en cours...' : '💤 Bot inactif — le compte n\'est pas connecté au serveur.';
+    }
+
+    // Stats
+    document.getElementById('stat-uptime').textContent = formatUptime(uptime);
+    totalMsgs = chatLogs.length;
+    document.getElementById('stat-msgs').textContent = totalMsgs;
+    const statEl = document.getElementById('stat-status');
+    statEl.textContent = connected ? 'En ligne' : (config.botEnabled ? 'Reconnect...' : 'Hors ligne');
+    statEl.className = 'stat-val ' + (connected ? 'green' : 'red');
+
+    // Chat indicator
+    const ind = document.getElementById('chat-indicator');
+    const cst = document.getElementById('chat-status-text');
+    ind.className = 'indicator ' + (connected ? 'green' : 'red');
+    cst.textContent = connected ? 'en ligne' : 'hors ligne';
+
+    // Chat list
+    const chatList = document.getElementById('chat-list');
+    if (chatLogs.length === 0) {
+      chatList.innerHTML = '<div class="chat-empty">En attente de messages...</div>';
+    } else {
+      chatList.innerHTML = chatLogs.map(m => `
+        <div class="chat-msg">
+          <div class="chat-avatar" style="background:${userColor(m.username)}">${initial(m.username)}</div>
+          <div class="chat-body">
+            <div class="chat-meta">
+              <span class="chat-user" style="color:${userColor(m.username)}">${m.username}</span>
+              <span class="chat-time">${m.time}</span>
+            </div>
+            <div class="chat-text">${m.message}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Logs
+    const logList = document.getElementById('log-list');
+    if (statusLog.length === 0) {
+      logList.innerHTML = '<div class="chat-empty">Aucun log pour l\'instant...</div>';
+    } else {
+      logList.innerHTML = statusLog.map(l => `
+        <div class="log-entry">
+          <span class="log-time">${l.time}</span>
+          <span class="log-text">${l.text}</span>
+        </div>
+      `).join('');
+    }
+
+    // Config fields (only if no pending changes)
+    lastConfig = config;
+    ['host','port','username','version'].forEach(f => {
+      const el = document.getElementById(`cfg-${f}`);
+      if (el && !el.classList.contains('changed')) {
+        el.value = config[f] || '';
+      }
+    });
+  }
+
+  // Poll every 2 seconds
+  refresh();
+  setInterval(refresh, 2000);
+</script>
+</body>
+</html>
