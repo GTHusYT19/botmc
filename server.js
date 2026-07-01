@@ -93,7 +93,12 @@ function startBot() {
   bot.on('spawn', () => {
     connectedAt = Date.now();
     addStatus('Bot connecté et prêt !');
-    setTimeout(() => { try { bot.chat('/login Yasir2009##'); } catch (e) {} }, 2000);
+    const pwd = process.env.BOT_PASSWORD;
+    if (pwd) {
+      setTimeout(() => { try { bot.chat(`/login ${pwd}`); } catch (e) {} }, 2000);
+    } else {
+      addStatus('⚠️ BOT_PASSWORD non défini — /login ignoré.');
+    }
     keepAlive();
   });
 
