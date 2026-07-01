@@ -1,6 +1,7 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
 const fs = require('fs');
+const { Client, GatewayIntentBits } = require('discord.js');
 
 const app = express();
 app.use(express.json());
@@ -44,6 +45,83 @@ async function sendToDiscord(content, username = 'Minecraft') {
   } catch (e) {
     console.error('[Discord] Erreur webhook :', e.message);
   }
+}
+
+// --- Discord Bot (écoute des commandes /msg et /cmd) ---
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID; // optionnel : restreint à un salon précis
+const MSG_PREFIX = '/msg ';
+const CMD_PREFIX = '/cmd ';
+
+if (DISCORD_BOT_TOKEN) {
+  const discordClient = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ],
+  });
+
+  discordClient.on('ready', () => {
+    console.log(`[Discord Bot] Connecté en tant que ${discordClient.user.tag}`);
+  });
+
+  discordClient.on('messageCreate', (message) => {
+    if (message.author.bot) return; // ignore les autres bots (et les webhooks)
+    if (DISCORD_CHANNEL_ID && message.channel.id !== DISCORD_CHANNEL_ID) return;
+
+    // --- /cmd : exécute une commande serveur (ex: /cmd tp Steve spawn) ---
+    if (message.content.startsWith(CMD_PREFIX)) {
+      const cmd = message.content.slice(CMD_PREFIX.length).trim();
+      if (!cmd) return;
+
+      if (!bot) {
+        message.reply('❌ Le bot Minecraft n\'est pas connecté.');
+        return;
+      }
+
+      const fullCmd = cmd.startsWith('/') ? cmd : `/${cmd}`;
+      try {
+        bot.chat(fullCmd);
+        addStatus(`[Discord] ${message.author.username} → Commande : ${fullCmd}`);
+        message.react('✅').catch(() => {});
+      } catch (e) {
+        message.reply(`❌ Erreur : ${e.message}`);
+      }
+      return;
+    }
+
+    // --- /msg : envoie un message de chat classique ---
+    if (message.content.startsWith(MSG_PREFIX)) {
+      const text = message.content.slice(MSG_PREFIX.length).trim();
+      if (!text) return;
+
+      // Si l'utilisateur met une commande dans /msg, on le redirige vers /cmd
+      if (text.startsWith('/')) {
+        message.reply(`ℹ️ Pour envoyer une commande, utilise \`${CMD_PREFIX}${text.slice(1)}\` au lieu de \`${MSG_PREFIX}\`.`);
+        return;
+      }
+
+      if (!bot) {
+        message.reply('❌ Le bot Minecraft n\'est pas connecté.');
+        return;
+      }
+
+      try {
+        bot.chat(text);
+        addStatus(`[Discord] ${message.author.username} → Minecraft : ${text}`);
+        message.react('✅').catch(() => {});
+      } catch (e) {
+        message.reply(`❌ Erreur : ${e.message}`);
+      }
+    }
+  });
+
+  discordClient.login(DISCORD_BOT_TOKEN).catch((e) => {
+    console.error('[Discord Bot] Erreur de connexion :', e.message);
+  });
+} else {
+  console.log('[Discord Bot] DISCORD_BOT_TOKEN non défini — écoute /msg et /cmd désactivée.');
 }
 
 function addStatus(msg) {
