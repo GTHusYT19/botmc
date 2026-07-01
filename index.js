@@ -18,10 +18,6 @@ function loadConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
 }
 
-function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-}
-
 let bot = null;
 let config = loadConfig();
 
@@ -45,7 +41,7 @@ function startBot() {
   });
 
   bot.on('spawn', () => {
-    console.log(`[AFK Bot] Connecté au serveur ${config.host}:${config.port}`);
+    console.log('Bot connecté et prêt !');
 
     setTimeout(() => {
       bot.chat('/login Yasir2009##');
@@ -55,7 +51,14 @@ function startBot() {
   });
 
   bot.on('chat', (username, message) => {
-    console.log(`[Chat] <${username}> ${message}`);
+    if (username === bot.username) return;
+
+    if (message === 'salut') {
+      bot.chat(`Salut ${username} !`);
+    }
+
+    // Exemple de réponse à tout message (pour tester)
+    // bot.chat(`${username} a dit : ${message}`)
   });
 
   bot.on('kicked', (reason) => {
