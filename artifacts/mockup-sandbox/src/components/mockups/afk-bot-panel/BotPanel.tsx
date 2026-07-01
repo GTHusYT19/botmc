@@ -7,27 +7,30 @@ const initialConfig = {
   version: "1.20.1",
 };
 
-// Messages basés sur le vrai comportement du bot :
-// - bot.on('chat') ignore ses propres messages
-// - si message === 'salut' → bot répond "Salut [username] !"
+// Bot AFK = connecté mais ne répond jamais
 const chatMessagesOff = [
-  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut", time: "14:32" },
-  { id: 2, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "hey les gars", time: "14:33" },
+  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut tout le monde", time: "14:32" },
+  { id: 2, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "gg le farm hier !", time: "14:33" },
   { id: 3, user: "CreeperKing", avatar: "C", color: "#57F287", text: "TonNomDeBot t'es là ?", time: "14:34" },
-  { id: 4, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "il répond pas lol", time: "14:35" },
+  { id: 4, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "il est pas connecté", time: "14:35" },
 ];
 
 const chatMessagesOn = [
-  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut", time: "14:32", isBot: false },
+  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut tout le monde", time: "14:32", isBot: false },
+  { id: 2, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "gg le farm hier !", time: "14:33", isBot: false },
+  { id: 3, user: "CreeperKing", avatar: "C", color: "#57F287", text: "TonNomDeBot t'es là ?", time: "14:34", isBot: false },
+  { id: 4, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "il répond pas lol", time: "14:35", isBot: false },
+  { id: 5, user: "CreeperKing", avatar: "C", color: "#57F287", text: "c'est un bot ou quoi 😂", time: "14:36", isBot: false },
   {
-    id: 2, user: "TonNomDeBot", avatar: "T", color: "#ED4245", text: "Salut CreeperKing !", time: "14:32", isBot: true,
+    id: 6,
+    user: "TonNomDeBot",
+    avatar: "T",
+    color: "#ED4245",
+    text: "",
+    time: "",
+    isBot: true,
+    silent: true,
   },
-  { id: 3, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "salut", time: "14:33", isBot: false },
-  {
-    id: 4, user: "TonNomDeBot", avatar: "T", color: "#ED4245", text: "Salut Steve_Pro !", time: "14:33", isBot: true,
-  },
-  { id: 5, user: "CreeperKing", avatar: "C", color: "#57F287", text: "haha le bot répond 😂", time: "14:34", isBot: false },
-  { id: 6, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "ouais mais le dev est pas là lol", time: "14:34", isBot: false },
 ];
 
 export function BotPanel() {
@@ -69,7 +72,7 @@ export function BotPanel() {
           <p className="text-[#6b6b8a] text-xs">Panel de contrôle — {config.host}:{config.port}</p>
         </div>
 
-        {/* Main toggle card */}
+        {/* Toggle card */}
         <div
           className="rounded-2xl p-4 border transition-all duration-300"
           style={{
@@ -108,7 +111,6 @@ export function BotPanel() {
               </div>
             </div>
 
-            {/* Toggle */}
             <button
               onClick={handleToggle}
               className="relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none"
@@ -132,7 +134,7 @@ export function BotPanel() {
             }}
           >
             {botEnabled ? (
-              <>✅ <span>Bot <strong>actif</strong> — répond automatiquement aux messages dans le chat.</span></>
+              <>✅ <span>Bot <strong>actif</strong> — connecté au serveur, ne répond à personne.</span></>
             ) : (
               <>💤 <span>Bot <strong>inactif</strong> — le compte n'est pas connecté au serveur.</span></>
             )}
@@ -186,60 +188,66 @@ export function BotPanel() {
             </div>
 
             <div className="p-4 space-y-3 min-h-[220px] max-h-72 overflow-y-auto">
-              {msgs.map((msg) => (
-                <div key={msg.id} className="flex gap-2.5">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
-                    style={{ background: msg.color }}
-                  >
-                    {msg.avatar}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-semibold" style={{ color: msg.color }}>{msg.user}</span>
-                      {msg.isBot && (
-                        <span
-                          className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-                          style={{ background: "#ed424525", color: "#ed4245", border: "1px solid #ed424440" }}
-                        >
-                          🤖 BOT
-                        </span>
-                      )}
-                      <span className="text-[10px] text-[#4a4a6a]">{msg.time}</span>
-                    </div>
-                    <p className="text-[#dcddde] text-xs mt-0.5">{msg.text}</p>
-                    {msg.isBot && (
+              {msgs.map((msg) => {
+                // Entrée silencieuse du bot — juste le bandeau, pas de message
+                if ((msg as any).silent) {
+                  return (
+                    <div key={msg.id} className="flex gap-2.5 items-start">
                       <div
-                        className="mt-1 px-2.5 py-1 rounded-lg text-[10px]"
-                        style={{ background: "#ed424512", borderLeft: "2px solid #ed4245", color: "#ed9090" }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 opacity-60"
+                        style={{ background: msg.color }}
                       >
-                        ⚠️ Derrière ce compte se trouve un bot AFK — le développeur n'est pas là.
+                        {msg.avatar}
                       </div>
-                    )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold opacity-60" style={{ color: msg.color }}>
+                            TonNomDeBot
+                          </span>
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+                            style={{ background: "#ed424525", color: "#ed4245", border: "1px solid #ed424440" }}
+                          >
+                            🤖 BOT
+                          </span>
+                          <span className="text-[10px] text-[#4a4a6a]">connecté</span>
+                        </div>
+                        <div
+                          className="mt-1 px-2.5 py-1.5 rounded-lg text-[10px]"
+                          style={{ background: "#ed424512", borderLeft: "2px solid #ed4245", color: "#ed9090" }}
+                        >
+                          ⚠️ Derrière ce compte se trouve un bot AFK — le développeur n'est pas là. Le bot ne répond à personne.
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={msg.id} className="flex gap-2.5">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
+                      style={{ background: msg.color }}
+                    >
+                      {msg.avatar}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-semibold" style={{ color: msg.color }}>{msg.user}</span>
+                        <span className="text-[10px] text-[#4a4a6a]">{msg.time}</span>
+                      </div>
+                      <p className="text-[#dcddde] text-xs mt-0.5">{msg.text}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {!botEnabled && (
                 <div className="text-center text-[#4a4a6a] text-[11px] pt-2 italic">
-                  Active le bot pour voir ses réponses automatiques...
+                  Active le bot pour le connecter au serveur...
                 </div>
               )}
             </div>
-
-            {/* Code hint */}
-            {botEnabled && (
-              <div
-                className="mx-4 mb-3 px-3 py-2 rounded-xl font-mono text-[10px] leading-relaxed"
-                style={{ background: "#0a0a14", color: "#6b9fd4", border: "1px solid #1e1e2e" }}
-              >
-                <span className="text-[#6b6b8a]">// index.js — logique active</span>{"\n"}
-                <span className="text-[#c586c0]">bot</span>.<span className="text-[#dcdcaa]">on</span>(<span className="text-[#ce9178]">'chat'</span>, (username, message) {"=> {"}{"\n"}
-                {"  "}<span className="text-[#c586c0]">if</span> (message === <span className="text-[#ce9178]">'salut'</span>){"\n"}
-                {"    "}bot.<span className="text-[#dcdcaa]">chat</span>(<span className="text-[#ce9178]">`Salut ${"${username}"} !`</span>){"\n"}
-                {"}"})
-              </div>
-            )}
 
             <div
               className="px-4 py-2.5 border-t flex items-center gap-2"

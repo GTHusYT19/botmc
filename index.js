@@ -51,14 +51,8 @@ function startBot() {
   });
 
   bot.on('chat', (username, message) => {
-    if (username === bot.username) return;
-
-    if (message === 'salut') {
-      bot.chat(`Salut ${username} !`);
-    }
-
-    // Exemple de réponse à tout message (pour tester)
-    // bot.chat(`${username} a dit : ${message}`)
+    console.log(`[Chat] <${username}> ${message}`);
+    // Bot AFK — ne répond pas aux messages
   });
 
   bot.on('kicked', (reason) => {
