@@ -7,15 +7,27 @@ const initialConfig = {
   version: "1.20.1",
 };
 
-const chatMessages = [
-  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "Salut tout le monde !", time: "14:32" },
-  { id: 2, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "On farm quoi ce soir ?", time: "14:33" },
+// Messages basés sur le vrai comportement du bot :
+// - bot.on('chat') ignore ses propres messages
+// - si message === 'salut' → bot répond "Salut [username] !"
+const chatMessagesOff = [
+  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut", time: "14:32" },
+  { id: 2, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "hey les gars", time: "14:33" },
+  { id: 3, user: "CreeperKing", avatar: "C", color: "#57F287", text: "TonNomDeBot t'es là ?", time: "14:34" },
+  { id: 4, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "il répond pas lol", time: "14:35" },
 ];
 
-const botMessages = [
-  { id: 3, user: "TonNomDeBot", avatar: "T", color: "#ED4245", isBot: true, text: "Je suis connecté 👾", time: "14:34" },
-  { id: 4, user: "CreeperKing", avatar: "C", color: "#57F287", text: "Lol t'es en AFK ?", time: "14:35" },
-  { id: 5, user: "TonNomDeBot", avatar: "T", color: "#ED4245", isBot: true, text: "...", time: "14:35" },
+const chatMessagesOn = [
+  { id: 1, user: "CreeperKing", avatar: "C", color: "#57F287", text: "salut", time: "14:32", isBot: false },
+  {
+    id: 2, user: "TonNomDeBot", avatar: "T", color: "#ED4245", text: "Salut CreeperKing !", time: "14:32", isBot: true,
+  },
+  { id: 3, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "salut", time: "14:33", isBot: false },
+  {
+    id: 4, user: "TonNomDeBot", avatar: "T", color: "#ED4245", text: "Salut Steve_Pro !", time: "14:33", isBot: true,
+  },
+  { id: 5, user: "CreeperKing", avatar: "C", color: "#57F287", text: "haha le bot répond 😂", time: "14:34", isBot: false },
+  { id: 6, user: "Steve_Pro", avatar: "S", color: "#5865F2", text: "ouais mais le dev est pas là lol", time: "14:34", isBot: false },
 ];
 
 export function BotPanel() {
@@ -25,7 +37,7 @@ export function BotPanel() {
   const [saved, setSaved] = useState(true);
   const [tab, setTab] = useState<"chat" | "config">("chat");
 
-  const msgs = botEnabled ? [...chatMessages, ...botMessages] : chatMessages;
+  const msgs = botEnabled ? chatMessagesOn : chatMessagesOff;
 
   const handleToggle = () => setBotEnabled((p) => !p);
 
@@ -61,7 +73,7 @@ export function BotPanel() {
         <div
           className="rounded-2xl p-4 border transition-all duration-300"
           style={{
-            background: botEnabled ? "linear-gradient(135deg, #1a2a1a, #141e14)" : "linear-gradient(135deg, #1a1a2e, #12121e)",
+            background: botEnabled ? "linear-gradient(135deg,#1a2a1a,#141e14)" : "linear-gradient(135deg,#1a1a2e,#12121e)",
             borderColor: botEnabled ? "#3ba55c55" : "#5865f240",
             boxShadow: botEnabled ? "0 0 20px #3ba55c25" : "0 0 20px #5865f215",
           }}
@@ -112,7 +124,6 @@ export function BotPanel() {
             </button>
           </div>
 
-          {/* Status bar */}
           <div
             className="mt-3 px-3 py-2 rounded-xl text-xs flex items-center gap-2"
             style={{
@@ -121,7 +132,7 @@ export function BotPanel() {
             }}
           >
             {botEnabled ? (
-              <>✅ <span>Bot <strong>actif</strong> — les joueurs verront qu'il y a un bot AFK derrière ce compte.</span></>
+              <>✅ <span>Bot <strong>actif</strong> — répond automatiquement aux messages dans le chat.</span></>
             ) : (
               <>💤 <span>Bot <strong>inactif</strong> — le compte n'est pas connecté au serveur.</span></>
             )}
@@ -163,7 +174,10 @@ export function BotPanel() {
               <div className="ml-auto flex items-center gap-1">
                 <div
                   className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: botEnabled ? "#3ba55c" : "#ed4245", boxShadow: `0 0 4px ${botEnabled ? "#3ba55c" : "#ed4245"}` }}
+                  style={{
+                    background: botEnabled ? "#3ba55c" : "#ed4245",
+                    boxShadow: `0 0 4px ${botEnabled ? "#3ba55c" : "#ed4245"}`,
+                  }}
                 />
                 <span className="text-[10px]" style={{ color: botEnabled ? "#3ba55c" : "#ed4245" }}>
                   {botEnabled ? "Bot connecté" : "Bot hors ligne"}
@@ -171,7 +185,7 @@ export function BotPanel() {
               </div>
             </div>
 
-            <div className="p-4 space-y-3 min-h-[200px] max-h-64 overflow-y-auto">
+            <div className="p-4 space-y-3 min-h-[220px] max-h-72 overflow-y-auto">
               {msgs.map((msg) => (
                 <div key={msg.id} className="flex gap-2.5">
                   <div
@@ -186,7 +200,7 @@ export function BotPanel() {
                       {msg.isBot && (
                         <span
                           className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-                          style={{ background: "#ed424525", color: "#ed4245", border: "1px solid #ed424540" }}
+                          style={{ background: "#ed424525", color: "#ed4245", border: "1px solid #ed424440" }}
                         >
                           🤖 BOT
                         </span>
@@ -205,7 +219,27 @@ export function BotPanel() {
                   </div>
                 </div>
               ))}
+
+              {!botEnabled && (
+                <div className="text-center text-[#4a4a6a] text-[11px] pt-2 italic">
+                  Active le bot pour voir ses réponses automatiques...
+                </div>
+              )}
             </div>
+
+            {/* Code hint */}
+            {botEnabled && (
+              <div
+                className="mx-4 mb-3 px-3 py-2 rounded-xl font-mono text-[10px] leading-relaxed"
+                style={{ background: "#0a0a14", color: "#6b9fd4", border: "1px solid #1e1e2e" }}
+              >
+                <span className="text-[#6b6b8a]">// index.js — logique active</span>{"\n"}
+                <span className="text-[#c586c0]">bot</span>.<span className="text-[#dcdcaa]">on</span>(<span className="text-[#ce9178]">'chat'</span>, (username, message) {"=> {"}{"\n"}
+                {"  "}<span className="text-[#c586c0]">if</span> (message === <span className="text-[#ce9178]">'salut'</span>){"\n"}
+                {"    "}bot.<span className="text-[#dcdcaa]">chat</span>(<span className="text-[#ce9178]">`Salut ${"${username}"} !`</span>){"\n"}
+                {"}"})
+              </div>
+            )}
 
             <div
               className="px-4 py-2.5 border-t flex items-center gap-2"
@@ -231,71 +265,28 @@ export function BotPanel() {
               Ces valeurs sont sauvegardées dans <code className="bg-[#0f0f1e] px-1 rounded text-[#a0a0d0]">config.json</code> et lues par <code className="bg-[#0f0f1e] px-1 rounded text-[#a0a0d0]">index.js</code> au démarrage.
             </p>
 
-            {/* Host */}
-            <div>
-              <label className="text-xs text-[#a0a0c0] font-medium block mb-1">🌐 Adresse IP / Domaine du serveur</label>
-              <input
-                type="text"
-                value={editConfig.host}
-                onChange={(e) => handleConfigChange("host", e.target.value)}
-                placeholder="play.example.com"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0f0f1e",
-                  border: `1px solid ${editConfig.host !== config.host ? "#f0a500" : "#2e2e4e"}`,
-                }}
-              />
-            </div>
+            {[
+              { field: "host", label: "🌐 Adresse IP / Domaine", placeholder: "play.example.com" },
+              { field: "port", label: "🔌 Port", placeholder: "25565" },
+              { field: "username", label: "👤 Nom du bot", placeholder: "MonBot" },
+              { field: "version", label: "🎮 Version Minecraft", placeholder: "1.20.1" },
+            ].map(({ field, label, placeholder }) => (
+              <div key={field}>
+                <label className="text-xs text-[#a0a0c0] font-medium block mb-1">{label}</label>
+                <input
+                  type="text"
+                  value={editConfig[field as keyof typeof editConfig]}
+                  onChange={(e) => handleConfigChange(field, e.target.value)}
+                  placeholder={placeholder}
+                  className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all"
+                  style={{
+                    background: "#0f0f1e",
+                    border: `1px solid ${editConfig[field as keyof typeof editConfig] !== config[field as keyof typeof config] ? "#f0a500" : "#2e2e4e"}`,
+                  }}
+                />
+              </div>
+            ))}
 
-            {/* Port */}
-            <div>
-              <label className="text-xs text-[#a0a0c0] font-medium block mb-1">🔌 Port</label>
-              <input
-                type="text"
-                value={editConfig.port}
-                onChange={(e) => handleConfigChange("port", e.target.value)}
-                placeholder="25565"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0f0f1e",
-                  border: `1px solid ${editConfig.port !== config.port ? "#f0a500" : "#2e2e4e"}`,
-                }}
-              />
-            </div>
-
-            {/* Username */}
-            <div>
-              <label className="text-xs text-[#a0a0c0] font-medium block mb-1">👤 Nom du bot</label>
-              <input
-                type="text"
-                value={editConfig.username}
-                onChange={(e) => handleConfigChange("username", e.target.value)}
-                placeholder="AFKBot"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0f0f1e",
-                  border: `1px solid ${editConfig.username !== config.username ? "#f0a500" : "#2e2e4e"}`,
-                }}
-              />
-            </div>
-
-            {/* Version */}
-            <div>
-              <label className="text-xs text-[#a0a0c0] font-medium block mb-1">🎮 Version Minecraft</label>
-              <input
-                type="text"
-                value={editConfig.version}
-                onChange={(e) => handleConfigChange("version", e.target.value)}
-                placeholder="1.20.1"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0f0f1e",
-                  border: `1px solid ${editConfig.version !== config.version ? "#f0a500" : "#2e2e4e"}`,
-                }}
-              />
-            </div>
-
-            {/* Buttons */}
             <div className="flex gap-2 pt-1">
               <button
                 onClick={handleSave}
@@ -321,7 +312,6 @@ export function BotPanel() {
               )}
             </div>
 
-            {/* Current config preview */}
             <div
               className="rounded-xl p-3 font-mono text-[10px] leading-relaxed"
               style={{ background: "#0a0a14", color: "#6b9fd4", border: "1px solid #1e1e2e" }}
