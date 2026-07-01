@@ -27,6 +27,25 @@ let connectedAt = null;
 let chatLogs = [];
 let statusLog = [];
 
+// --- Discord Webhook ---
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+
+async function sendToDiscord(content, username = 'Minecraft') {
+  if (!DISCORD_WEBHOOK_URL) return;
+  try {
+    await fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: content.slice(0, 2000), // limite Discord
+        username: username.slice(0, 80),
+      }),
+    });
+  } catch (e) {
+    console.error('[Discord] Erreur webhook :', e.message);
+  }
+}
+
 function addStatus(msg) {
   statusLog.unshift({ time: new Date().toLocaleTimeString('fr-FR'), text: msg });
   if (statusLog.length > 50) statusLog.pop();
@@ -36,6 +55,15 @@ function addStatus(msg) {
 function addChat(username, message, type = 'chat') {
   chatLogs.unshift({ time: new Date().toLocaleTimeString('fr-FR'), username, message, type });
   if (chatLogs.length > 100) chatLogs.pop();
+
+  // Relaye chaque message capturé vers Discord
+  if (type === 'whisper') {
+    sendToDiscord(`✉️ **${username}** : ${message}`, 'MP Minecraft');
+  } else if (type === 'system') {
+    sendToDiscord(`⚙️ ${message}`, 'Serveur Minecraft');
+  } else {
+    sendToDiscord(message, username);
+  }
 }
 
 // Patch prismarine-chat pour ignorer les formats inconnus au lieu de crasher
@@ -93,6 +121,7 @@ function startBot() {
   bot.on('spawn', () => {
     connectedAt = Date.now();
     addStatus('Bot connecté et prêt !');
+    sendToDiscord('🟢 Bot connecté et prêt !', 'Statut Bot');
     const pwd = process.env.BOT_PASSWORD;
     if (pwd) {
       setTimeout(() => { try { bot.chat(`/login ${pwd}`); } catch (e) {} }, 2000);
@@ -153,6 +182,7 @@ function startBot() {
 
   bot.on('kicked', (reason) => {
     addStatus(`Expulsé : ${reason}`);
+    sendToDiscord(`🔴 Bot expulsé : ${reason}`, 'Statut Bot');
     connectedAt = null; bot = null;
     setTimeout(startBot, 5000);
   });
