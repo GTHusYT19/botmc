@@ -1,7 +1,7 @@
 {
-  "host": "host",
+  "host": "lipoutlolsmp.aternos.me",
   "port": 53096,
   "username": "GTHusYT",
   "version": "1.21.4",
-  "botEnabled": false
+  "botEnabled": true
 }
