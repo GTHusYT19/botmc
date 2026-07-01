@@ -102,12 +102,7 @@ function startBot() {
     keepAlive();
   });
 
-  // Chat public
-  bot.on('chat', (username, message) => {
-    try { addChat(username, message, 'chat'); } catch (e) {}
-  });
-
-  // Messages privés — /msg et /r
+  // Messages privés natifs — /msg et /r (format vanilla)
   bot.on('whisper', (username, message) => {
     try {
       addChat(username, message, 'whisper');
@@ -115,24 +110,41 @@ function startBot() {
     } catch (e) {}
   });
 
-  // Messages système + détection format privé [[EXPÉDITEUR]] DESTINATAIRE message
+  // Tous les messages passent ici — on classe selon le format
   bot.on('message', (jsonMsg) => {
     try {
       const text = jsonMsg.toString().trim();
       if (!text) return;
 
-      // Format msg privé du serveur : [[PIX0O]] GuerrierSayan bonjour
+      // Format MP du serveur : [[EXPÉDITEUR]] DESTINATAIRE message
+      // Le destinataire N'a PAS de : (sinon c'est du chat public avec rang)
       const pmMatch = text.match(/^\[\[([^\]]+)\]\]\s+(\S+)\s+(.+)$/);
       if (pmMatch) {
         const sender    = pmMatch[1];
         const recipient = pmMatch[2];
         const content   = pmMatch[3];
-        addChat(`${sender} → ${recipient}`, content, 'whisper');
-        addStatus(`MP : [${sender} → ${recipient}] ${content}`);
+
+        if (!recipient.endsWith(':')) {
+          // Vrai message privé
+          addChat(`${sender} → ${recipient}`, content, 'whisper');
+          addStatus(`MP : [${sender} → ${recipient}] ${content}`);
+          return;
+        }
+
+        // Chat public avec rang : [[Rang]] Joueur: message
+        const playerName = recipient.replace(/:$/, '');
+        addChat(playerName, content, 'chat');
         return;
       }
 
-      // Évite les doublons avec les events chat et whisper
+      // Chat public vanilla : <Joueur> message
+      const vanillaMatch = text.match(/^<([^>]+)>\s+(.+)$/);
+      if (vanillaMatch) {
+        addChat(vanillaMatch[1], vanillaMatch[2], 'chat');
+        return;
+      }
+
+      // Message système (annonces serveur, plugins, etc.)
       const last = chatLogs[0];
       if (last && last.message === text) return;
       addChat('Serveur', text, 'system');
